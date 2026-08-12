@@ -2,6 +2,7 @@ import pytesseract
 import re
 from preprocess import find_receipt_corners, order_points,warp_receipt,binarize
 from PIL import Image
+from parser import extract_total,extract_date
 import cv2
 pytesseract.pytesseract.tesseract_cmd=r'C:\Program Files\Tesseract-OCR\tesseract.exe'  # Update this path to where Tesseract is installed on your system
 def count_real_words(text):
@@ -39,7 +40,7 @@ def get_confidence_score(img, psm):
     average_confidence = sum(confidences) / len(confidences)
     return average_confidence
 
-img_file=r"samples\mysample_3.jpg"
+img_file=r"samples\image5.jpg"
 no_noised= r"temp\no_noise.jpg"
 print(get_confidence_score(img_file,6))
 
@@ -69,3 +70,13 @@ else:
 best_text,best_label=get_best_ocr_result(candidates)
 print("The best Image was " + best_label)
 print("BEST Text OCR result:",best_text)
+total=extract_total(best_text)
+if total is None:
+    print("Failed to find keyword total")
+else:
+    print("The receipt total is: ", total)
+date=extract_date(best_text)
+if date is None:
+    print("No date found")
+else:
+    print("Date found", date)
