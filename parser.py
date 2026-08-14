@@ -1,12 +1,13 @@
 import re
 from dateutil.parser import ParserError
-
+from dateutil import parser as date_parser
 def extract_total(text):
     lines = text.split("\n")
     candidate_lines = []
 
     for line in lines:
         cleanline = re.sub(r"(\d)\s+\.", r"\1.", line)
+        cleanline = re.sub(r"(\d)\s+(\d{2})\b", r"\1.\2", cleanline)#Fix if misread '.' as ' ' replaces it to catch total
         keyword_match = re.search(r"\btotal\b", cleanline, flags=re.IGNORECASE)
         number_match = re.search(r"[\d,]+\.\d{2}", cleanline)
 
@@ -32,49 +33,35 @@ def extract_total(text):
     result=float(clean_num)
 
     return result  # replace with your parsed float
-from dateutil import parser as date_parser
-from dateutil.parser import ParserError
+
 
 def extract_date(text):
-    """
-    Takes raw OCR text, returns the best-guess date as a string
-    (normalized format), or None if nothing confident was found.
-    """
     lines = text.split("\n")
+    time_pattern = re.compile(r"\d{1,2}:\d{2}\s*(AM|PM)?", re.IGNORECASE)
+    fallback = None
 
     for line in lines:
-        match=re.search(r"\b\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}\b|\b(\d{1,2}\s+)(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\b(,?\s+\d{4})\b",line,flags=re.IGNORECASE)# Checking if the line contains a digit
+        match = re.search(
+            r"\b\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}\b|\b(\d{1,2}\s+)(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\b(,?\s+\d{4})\b",
+            line, flags=re.IGNORECASE
+        )
         if match:
             try:
-                parsed=date_parser.parse(match.group(),fuzzy=True)# ignores the surrounding text and focus on thedate part only
-                return parsed
+                parsed = date_parser.parse(match.group(), fuzzy=True)
             except ParserError:
-                print("The Text couldnt be parsed as a date")
-        pass
-    return None
+                continue
+
+            if time_pattern.search(line):
+                return parsed          # date + time together = high confidence real timestamp
+            elif fallback is None:
+                fallback = parsed      # keep as backup only
+
+    return fallback
 
 def parse_receipt(text):
-    """
-    Main entry point for Phase 3. Takes raw OCR text (best_text from
-    ocr_raw.py), returns a structured dict.
-    """
     return {
         "merchant": None,  # deliberately out of scope per your risk-management plan
         "date": extract_date(text),
         "total": extract_total(text),
         "raw_text": text,
     }
-
-
-if __name__ == "__main__":
-    # TODO: paste in one of your actual best_text outputs here as a string
-    # (e.g. the Trader Joe's one) and run this file directly to test
-    # extract_total and extract_date in isolation, without needing to
-    # re-run OCR every time. This is your quick iteration loop for Phase 3.
-    sample_text = """
-    PASTE A REAL OCR OUTPUT HERE
-    """
-    floatnum = re.search(r"[\d,]+\.\d{2}", "TOTAL 23.19")
-    print(floatnum)          # what you showed above - a Match object
-    print(floatnum.group())  # what does THIS print?
-    #print(parse_receipt(sample_text))

@@ -497,3 +497,14 @@ iil iil lI
 10/31/21 10:08:26
 
 (.venv) PS C:\Users\abdul\OneDrive\Desktop\OCR project> 
+
+# Raw model evaluations(TESTS)
+{'sequence': 'Whole Foods Market', 'labels': ['groceries', 'shopping', 'food & dining', 'utilities', 'entertainment', 'transport', 'other'], 'scores': [0.8512338995933533, 0.06472866982221603, 0.04416297376155853, 0.014366937801241875, 0.011798055842518806, 0.009065338410437107, 0.004644057713449001]}
+Whole Foods Market -> None
+{'sequence': 'Uber', 'labels': ['transport', 'other', 'utilities', 'entertainment', 'food & dining', 'shopping', 'groceries'], 'scores': [0.8528038263320923, 0.08369138836860657, 0.029693199321627617, 0.027609240263700485, 0.003007881809026003, 0.0016000168398022652, 0.0015943964244797826]}
+Uber -> None
+{'sequence': 'Cheezious', 'labels': ['entertainment', 'other', 'food & dining', 'utilities', 'transport', 'groceries', 'shopping'], 'scores': [0.6912218332290649, 0.15318843722343445, 0.09806065261363983, 0.019904280081391335, 0.01906573958694935, 0.010569834150373936, 0.0079891886562109]}
+Cheezious -> None
+{'sequence': 'Shell Gas Station', 'labels': ['utilities', 'entertainment', 'transport', 'other', 'groceries', 'food & dining', 'shopping'], 'scores': [0.8284434080123901, 0.08292010426521301, 0.035517364740371704, 0.024679599329829216, 0.011815332807600498, 0.008796337991952896, 0.007827808149158955]}
+Shell Gas Station -> None
+(venv) PS C:\Users\ABDULLAH\OneDrive\Desktop\OCRProject> 
