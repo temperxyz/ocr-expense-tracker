@@ -40,7 +40,7 @@ def get_confidence_score(img, psm):
     average_confidence = sum(confidences) / len(confidences)
     return average_confidence
 
-img_file=r"samples\image5.jpg"
+img_file=r"samples\mysample_2.jpg"
 no_noised= r"temp\no_noise.jpg"
 print(get_confidence_score(img_file,6))
 

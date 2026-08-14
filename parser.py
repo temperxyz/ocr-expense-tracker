@@ -43,7 +43,7 @@ def extract_date(text):
     lines = text.split("\n")
 
     for line in lines:
-        match=re.search(r"\b\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}\b|\b(\d{1,2}\s+)?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\b(,?\s+\d{4})?\b",line,flags=re.IGNORECASE)# Checking if the line contains a digit
+        match=re.search(r"\b\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}\b|\b(\d{1,2}\s+)(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|june|july|august|september|october|november|december)\b(,?\s+\d{4})\b",line,flags=re.IGNORECASE)# Checking if the line contains a digit
         if match:
             try:
                 parsed=date_parser.parse(match.group(),fuzzy=True)# ignores the surrounding text and focus on thedate part only
