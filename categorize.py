@@ -1,10 +1,10 @@
 from transformers import pipeline
-
-# Load once at module level — NOT inside the function.
-# Why? Think about what happens if this line were inside categorize_expense()
-# and you called it 50 times processing 50 receipts...
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-
+"""
+Takes a merchant name (string), returns (status, category, confidence).
+status is one of: "confident" (keyword match), "likely" (model, score>=0.5),
+"uncertain" (model, score<0.5, or empty input).
+"""
 CATEGORIES = [
     "groceries",
     "food & dining",
@@ -29,6 +29,7 @@ KEYWORD_OVERRIDES = {
     "shell": "transport",
     "total parco": "transport",
     "pso": "transport",
+    "transport":"transport",
 
     # groceries
     "carrefour": "groceries",
@@ -36,6 +37,8 @@ KEYWORD_OVERRIDES = {
     "al fatah": "groceries",
     "metro cash": "groceries",
     "hyperstar": "groceries",
+    "groceries": "groceries",
+    " mart ": "groceries",
 
     # food & dining
     "cheezious": "food & dining",
@@ -46,6 +49,7 @@ KEYWORD_OVERRIDES = {
     "cafe": "food & dining",
     "restaurant": "food & dining",
     "ranchers": "food & dining",
+    "food": "food & dining",
 
     # utilities
     "electric": "utilities",
@@ -54,6 +58,7 @@ KEYWORD_OVERRIDES = {
     "ptcl": "utilities",
     "internet": "utilities",
     "water":"utilities",
+    "utility":"utilities",
 
       # entertainment
     "netflix": "entertainment",
@@ -66,6 +71,7 @@ KEYWORD_OVERRIDES = {
     "steam": "entertainment",
     "playstation": "entertainment",
     "gaming": "entertainment",
+    "entertainment": "entertainment",
 
     # shopping
     "outfitters": "shopping",
@@ -75,28 +81,50 @@ KEYWORD_OVERRIDES = {
     "olx":"shopping",
     "j.":"shopping",
     "ideas":"shopping",
-    "amazon":"shopping"
+    "amazon":"shopping",
+    "shopping": "shopping"
 }
 
 def categorize_expense(merchant_text):
     """
     Takes a merchant name (string), returns (category, confidence).
     """
+    
+    if not merchant_text:
+        return "uncertain","other", 0.0  # no text to work with, don't even call the model
     lowercase=merchant_text.lower()
-    if not lowercase:
-        return "other", 0.0  # no text to work with, don't even call the model
     for keyword,category in KEYWORD_OVERRIDES.items():
         if keyword in lowercase:
-            return category,1.0
+            return "confident",category,1.0
 
     result=classifier(lowercase,candidate_labels=CATEGORIES)
-    toplabel=result["labels"][0]# return category name
+    toplabel=result["labels"][0]# return top category name
     topscore=result["scores"][0]# return the score
-    return toplabel,topscore
-    pass
+    if topscore<0.5:
+        return "uncertain",toplabel,topscore
+    return "likely",toplabel,topscore
 
 
 if __name__ == "__main__":
-    test_merchants = ["Whole Foods Market", "Uber", "Cheezious", "Shell Gas Station"]
+    test_merchants = [
+        # clean, no keyword hit — model has to work unassisted
+        "Bata",
+        "Chase Value",
+        "Al-Fatah Super Store",   # typo'd version, won't match "al fatah" dict key
+
+        # ambiguous / edge cases
+        "Total",
+        "Al Meezan Bank",
+        "J.",                     # you already have "j." in dict — check it doesn't false-positive on random text
+
+        # garbled, OCR-style noise — the realistic test
+        "UBEER",
+        "CARREFDUR",
+        "CHEEZI0US",
+        "5HELL",
+        "WH0LE F00D5 MARKET",
+        "",                       # empty string — makes sure your guard works
+        None,                     # None — makes sure your guard works (this is the one that'll crash right now)
+    ]
     for m in test_merchants:
-        print(m, "->", categorize_expense(m))   
+        print(m, "->", categorize_expense(m))
