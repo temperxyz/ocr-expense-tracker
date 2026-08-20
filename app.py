@@ -7,11 +7,13 @@ from ocr_raw import extract_text_from_receipt
 from parser import parse_receipt
 from categorize import categorize_expense,CATEGORIES
 from db import init_db,insert_expense,get_all_expenses,get_expenses_by_category,get_expenses_by_date_range,delete_expense,update_expense
+from dashboard import show_dashboard
 
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Add Receipt", "View All Expenses", "Monthly View", "Update / Delete"])
-
-if page == "Add Receipt":
+page = st.sidebar.radio("Go to", ["ShowDashboard","Add Receipt", "View All Expenses", "Monthly View", "Update / Delete"])
+if page=="ShowDashboard":
+    show_dashboard()
+elif page == "Add Receipt":
     st.title("OCR Expense Tracker")
     init_db()
 
