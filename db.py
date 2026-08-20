@@ -79,6 +79,3 @@ def update_expense(expense_id, merchant, date, total, category, raw_text, image_
     conn.commit()
     conn.close()
     return cursor.rowcount
-if __name__=="__main__":
-    init_db()
-    print("Database initialized")
