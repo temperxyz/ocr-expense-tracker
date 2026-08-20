@@ -1,38 +1,55 @@
 import re
 from dateutil.parser import ParserError
 from dateutil import parser as date_parser
-def extract_total(text):
-    lines = text.split("\n")
-    candidate_lines = []
-
+def get_total_lines(lines):
+    #sorts total-ish lines into 3 buckets, grand total is best, plain total is
+    #fine, but subtotal/tax lines are last resort only cause those arent the
+    #actual total we want
+    grand=[]
+    normal=[]
+    taxsub=[]
     for line in lines:
         cleanline = re.sub(r"(\d)\s+\.", r"\1.", line)
-        cleanline = re.sub(r"(\d)\s+(\d{2})\b", r"\1.\2", cleanline)#Fix if misread '.' as ' ' replaces it to catch total
-        keyword_match = re.search(r"\btotal\b", cleanline, flags=re.IGNORECASE)
-        number_match = re.search(r"[\d,]+\.\d{2}", cleanline)
+        cleanline = re.sub(r"(\d)\s+(\d{2})\b", r"\1.\2", cleanline)#Fix if misread '.' as ' '
+        if not re.search(r"\btotal\b",cleanline,flags=re.IGNORECASE):
+            continue
+        if re.search(r"grand\s*total",cleanline,flags=re.IGNORECASE):
+            grand.append(cleanline)
+        elif re.search(r"subtotal|sub\s*total|\btax\b",cleanline,flags=re.IGNORECASE):
+            taxsub.append(cleanline)
+        else:
+            normal.append(cleanline)
+    return grand,normal,taxsub
 
-        if keyword_match and number_match:#Both number and line is present
-            if keyword_match.start() < number_match.start():# meaning total appear before the amount
-                candidate_lines.append(cleanline)
-            pass
-    if not candidate_lines:
-        return None #Fails check
-    chosen_line=""
-    wordtofind=r"\b"+"Grand Total" +r"\b"# idk but i think this can have a problem like what if its Grand Total: or GrandTotal these variations could make it difficult
-    for items in candidate_lines:
-        if re.search(wordtofind,items,flags=re.IGNORECASE):
-            chosen_line=items
-        pass
-    if chosen_line=="":#Meaning Grandtotal wasnt there so mostly the last total is the actual total
-        chosen_line=candidate_lines[-1]
-   
-    floatnum=re.search(r"[\d,]+\.\d{2}",chosen_line)
-    if floatnum is None:
+def pick_amount(line):
+    #if theres a currency symbol grab the number right after it, thats usually
+    #the actual amount and not some random quantity on the line (like "14" in
+    #"total for 14 item is $32"). if no symbol just take the last number since
+    #the amount is usually at the end of the line
+    currency_match=re.search(r"(?:rs\.?|pkr|\$)\s*([\d,]+(?:\.\d{1,2})?)",line,flags=re.IGNORECASE)
+    if currency_match:
+        num=currency_match.group(1)
+    else:
+        all_nums=re.findall(r"[\d,]+(?:\.\d{1,2})?",line)
+        if not all_nums:
+            return None
+        num=all_nums[-1]
+    clean_num=re.sub(r"[,]","",num)
+    try:
+        return float(clean_num)
+    except ValueError:
         return None
-    clean_num=re.sub(r"[,]","",floatnum.group())
-    result=float(clean_num)
 
-    return result  # replace with your parsed float
+def extract_total(text):
+    lines = text.split("\n")
+    grand,normal,taxsub=get_total_lines(lines)
+    for bucket in (grand,normal,taxsub):#try grand total first, then normal, only fall to tax/subtotal if nothing else
+        if bucket:
+            chosen_line=bucket[-1]
+            amount=pick_amount(chosen_line)
+            if amount is not None:
+                return amount
+    return None #Fails check
 
 
 def extract_date(text):
@@ -55,7 +72,20 @@ def extract_date(text):
                 return parsed          # date + time together = high confidence real timestamp
             elif fallback is None:
                 fallback = parsed      # keep as backup only
-
+    if fallback is not None:
+        return fallback
+    #regex didnt catch anything, probably ocr messed up the slashes/dots (like reading
+    #10/O5/2026 with a letter O). try swapping the common misreads and just throw it
+    #at dateutil directly instead of matching our own pattern
+    for line in lines:
+        cleaned=line.replace("O","0").replace("o","0")
+        if not re.search(r"\d",cleaned):
+            continue
+        try:
+            parsed=date_parser.parse(cleaned,fuzzy=True)
+            return parsed
+        except (ParserError,ValueError,OverflowError):
+            continue
     return fallback
 
 def parse_receipt(text):
