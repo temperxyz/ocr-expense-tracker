@@ -8,15 +8,13 @@ from parser import parse_receipt
 from categorize import categorize_expense,CATEGORIES
 from db import init_db,insert_expense,get_all_expenses,get_expenses_by_category,get_expenses_by_date_range,delete_expense,update_expense
 from dashboard import show_dashboard
-
+init_db()
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["ShowDashboard","Add Receipt", "View All Expenses", "Monthly View", "Update / Delete"])
 if page=="ShowDashboard":
     show_dashboard()
 elif page == "Add Receipt":
     st.title("OCR Expense Tracker")
-    init_db()
-
     uploaded_file=st.file_uploader("Upload a receipt  (jpg)",type="jpg")
     if uploaded_file is not None:
         image_path=f"uploads/{uploaded_file.name}"
