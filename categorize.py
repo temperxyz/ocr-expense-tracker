@@ -83,6 +83,7 @@ KEYWORD_OVERRIDES = {
     "ideas":"shopping",
     "amazon":"shopping",
     "shopping": "shopping"
+    ,"shop":"shopping"
 }
 
 def categorize_expense(merchant_text):
@@ -115,7 +116,7 @@ if __name__ == "__main__":
         # ambiguous / edge cases
         "Total",
         "Al Meezan Bank",
-        "J.",                     # you already have "j." in dict — check it doesn't false-positive on random text
+        "J.",                    
 
         # garbled, OCR-style noise — the realistic test
         "UBEER",
@@ -123,8 +124,8 @@ if __name__ == "__main__":
         "CHEEZI0US",
         "5HELL",
         "WH0LE F00D5 MARKET",
-        "",                       # empty string — makes sure your guard works
-        None,                     # None — makes sure your guard works (this is the one that'll crash right now)
+        "",                       
+        None,                     
     ]
     for m in test_merchants:
         print(m, "->", categorize_expense(m))
