@@ -1,10 +1,4 @@
 
-"""
-Sliver false-positive: fixed, verified
-Folded-paper limitation: understood, documented as inherent limitation (planar homography can't fix 3D-curved paper)
-Busy-background limitation: diagnosed (Jan Mall fabric example), not yet mitigated — candidate fix: restrict Canny/contour search to a central frame region
-count_real_words: written, currently unused, deliberate deferral pending evidence it's needed
-"""
 import cv2
 import numpy as np
 def find_receipt_corners(img):
@@ -76,3 +70,16 @@ def binarize(img):
     gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     threshold_value,threshold_img=cv2.threshold(gray,0,255,cv2.THRESH_BINARY +cv2.THRESH_OTSU)
     return threshold_img
+def adaptive_binarize(img):
+    gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)#converting to grayscale before handling uneven lighting
+    threshold_img=cv2.adaptiveThreshold(gray,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,31,11)#different parts of the receipt can have different brightness
+    return threshold_img
+def upscale(img):
+    return cv2.resize(img,None,fx=2,fy=2,interpolation=cv2.INTER_CUBIC)#making small receipt text larger for tesseract
+def resize_for_ocr(img,max_dimension=1800):
+    height,width=img.shape[:2]
+    largest=max(height,width)
+    if largest<=max_dimension:
+        return img
+    scale=max_dimension/largest
+    return cv2.resize(img,None,fx=scale,fy=scale,interpolation=cv2.INTER_AREA)#large phone images take much longer without improving receipt text
