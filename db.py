@@ -1,6 +1,11 @@
 import sqlite3
 
 DB_PATH="expenses.db"
+def normalize_merchant(merchant):
+    if merchant is None:
+        return ""
+    words=str(merchant).strip().split()#removes extra spaces before storing the merchant
+    return " ".join(word[:1].upper()+word[1:].lower() for word in words)
 def getconnection():
     #return connection object to the sqlite db
     conn=sqlite3.connect(DB_PATH)
@@ -27,6 +32,9 @@ def init_db():
                                      raw_text TEXT NOT NULL,
                                      image_path TEXT NOT NULL UNIQUE,
                                      created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+    rows=cursor.execute("SELECT expense_id,merchant FROM expense").fetchall()
+    for row in rows:
+        cursor.execute("UPDATE expense SET merchant=? WHERE expense_id=?",(normalize_merchant(row[1]),row[0]))#also fixes merchants already saved in different cases
     conn.commit()
     conn.close()
 def get_expenses_by_category(category):
@@ -40,6 +48,7 @@ def get_expenses_by_category(category):
 def insert_expense(merchant, date, total, category, raw_text, image_path):
     conn = getconnection()
     cursor = conn.cursor()
+    merchant=normalize_merchant(merchant)
     try:
         cursor.execute("""
             INSERT INTO expense(merchant,date,total,category,raw_text,image_path)
@@ -70,6 +79,7 @@ def delete_expense(expense_id):
 def update_expense(expense_id, merchant, date, total, category, raw_text, image_path):
     conn = getconnection()
     cursor = conn.cursor()
+    merchant=normalize_merchant(merchant)
     cursor.execute("""
         UPDATE expense
         SET merchant = ?, date = ?, total = ?, category = ?, raw_text = ?, image_path = ?
