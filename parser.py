@@ -1,6 +1,7 @@
 import re
 from dateutil.parser import ParserError
 from dateutil import parser as date_parser
+TOTAL_LABELS=re.compile(r"\b(grand\s*total|total\s*due|amount\s*due|net\s*total|balance|bal|total|paid)\b",flags=re.IGNORECASE)#different vendors use different names for the final amount
 def get_total_lines(lines):
     #sorts total-ish lines into 3 buckets, grand total is best, plain total is
     #fine, but subtotal/tax lines are last resort only cause those arent the
@@ -8,14 +9,20 @@ def get_total_lines(lines):
     grand=[]
     normal=[]
     taxsub=[]
-    for line in lines:
+    for i,line in enumerate(lines):
         cleanline = re.sub(r"(\d)\s+\.", r"\1.", line)
         cleanline = re.sub(r"(\d)\s+(\d{2})\b", r"\1.\2", cleanline)#Fix if misread '.' as ' '
-        if not re.search(r"\btotal\b",cleanline,flags=re.IGNORECASE):
+        if TOTAL_LABELS.search(cleanline) and not re.search(r"\d",cleanline):
+            for nextline in lines[i+1:i+4]:
+                nextline=nextline.strip()
+                if nextline and re.search(r"\d",nextline):
+                    cleanline += " "+nextline#some receipts print TOTAL and its amount on a nearby line
+                    break
+        if not TOTAL_LABELS.search(cleanline):
             continue
-        if re.search(r"grand\s*total",cleanline,flags=re.IGNORECASE):
+        if re.search(r"grand\s*total|total\s*due|amount\s*due|net\s*total",cleanline,flags=re.IGNORECASE):
             grand.append(cleanline)
-        elif re.search(r"subtotal|sub\s*total|\btax\b",cleanline,flags=re.IGNORECASE):
+        elif re.search(r"subtotal|sub\s*total|\btax\b|\bchange\b|\bcash\b|\btend\b",cleanline,flags=re.IGNORECASE):
             taxsub.append(cleanline)
         else:
             normal.append(cleanline)
